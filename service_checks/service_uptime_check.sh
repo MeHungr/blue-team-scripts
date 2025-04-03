@@ -25,7 +25,7 @@ fi
 cat "$run_log" >> "$full_log"
 
 # ===== Send this run's log to discord =====
-./discord_send.sh "$(cat $service_log_path)"
+./discord_send.sh "$(cat $run_log)"
 
 # ===== Show user where the log file is =====
 echo "Done! The logs can be viewed at: $full_log"
