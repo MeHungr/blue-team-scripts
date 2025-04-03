@@ -42,29 +42,29 @@ run_log="$LOG_DIR/service_check.log"
 run_check() {
     local script_path="$1"
     local label
-    label="$(basename "$script_path" .sh)"  # check_firewall
+    label="$(basename "$script_path" .sh)"
     local temp_log="/tmp/${label}_check.log"
 
     echo "[RUNNING] $label" | tee -a "$run_log"
 
-    # Run check and capture logs
-    "$script_path" "$mode" | tee >(tee -a "$full_log") >> "$temp_log"
-    cat "$temp_log" >> "$run_log"
+    # ONLY log once
+    "$script_path" "$mode" | tee "$temp_log"
+    cat "$temp_log" | tee -a "$run_log" >> "$full_log"
 
     echo "[DONE] $label" | tee -a "$run_log"
     echo >> "$run_log"
 
-    # ===== Discord Output =====
-    if [ "$discord" = true ]; then
-        # Extract the check name and convert to uppercase
-        local base="${label#check_}"                # check_firewall → firewall
-        local var_name="${base^^}_WEBHOOK_URL"      # firewall → FIREWALL_WEBHOOK_URL
-        local webhook="${!var_name}"                # Indirect expansion
+    # ===== Discord output =====
+    if [ "$DISCORD" = true ]; then
+        local base="${label#check_}"
+        local upper_base="${base^^}"
+        local var_name="${upper_base}_WEBHOOK_URL"
+        local webhook="${!var_name}"
 
-        if [[ -n "$webhook" ]]; then
+        if [[ -n "$webhook" && -s "$temp_log" ]]; then
             ./discord_send.sh "$(cat "$temp_log")" "$webhook"
         else
-            echo "[WARN] No webhook configured for $base ($var_name not set)" | tee -a "$run_log"
+            echo "[WARN] No webhook for $var_name or log is empty" | tee -a "$run_log"
         fi
     fi
 }
