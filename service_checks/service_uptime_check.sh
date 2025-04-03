@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# ===== ANSI color codes =====
+green="\033[0;32m"  # Success messages
+yellow="\033[1;33m"  # Warnings
+red="\033[0;31m"    # Errors
+reset="\033[0m"      # Reset text color
+
 # The full uptime log (persistent)
 full_log="/var/log/service_check_full.log"
 # The single-run log (overwritten each run)
@@ -27,5 +33,6 @@ cat "$run_log" >> "$full_log"
 # ===== Send this run's log to discord =====
 ./discord_send.sh "$(cat $run_log)"
 
-# ===== Show user where the log file is =====
-echo "Done! The logs can be viewed at: $full_log"
+# ===== Show user output in less =====
+(cat "$run_log"; echo -e "${green}Done! The full log can be viewed at: ${yellow}$full_log${reset}") | less -R
+
