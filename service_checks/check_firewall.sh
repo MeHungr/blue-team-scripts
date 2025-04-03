@@ -93,6 +93,7 @@ compare_ruleset () {
 }
 
 # ===== Main Execution =====
-echo -e "$log_file" # Echoes the location of the log file at the top for use in the main script
+echo "$log_file" # Echoes the location of the log file at the top for use in the main script
 get_ruleset
 compare_ruleset
+
