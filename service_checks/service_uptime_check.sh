@@ -93,7 +93,7 @@ run_check "$ROOT_DIR/service_checks/check_services.sh"
 
 # ===== Discord Alert =====
 if [ "$DISCORD" = true ]; then
-    ./discord_send.sh "$(cat "$run_log")" "$LOGGING_WEBHOOK"
+    ./discord_send.sh "$(cat "$run_log")" "$LOGGING_WEBHOOK_URL"
 fi
 
 # ===== Show Output =====
