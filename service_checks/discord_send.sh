@@ -32,6 +32,9 @@ if [[ -z "$message" || -z "$discord_webhook_url" ]]; then
     exit 1
 fi
 
+# ===== Strip ANSI color codes =====
+message="$(echo "$message" | sed -r 's/\x1B\[[0-9;]*[mK]//g')"
+
 # ===== Send one chunk =====
 send_chunk() {
     local chunk="$1"
