@@ -1,9 +1,12 @@
 #!/bin/bash
 
 # ===== Source config.env =====
-script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-root_dir="$(dirname "$script_dir")"
+script_dir="$(dirname "$(realpath "$0")")"
+root_dir="$(realpath "$script_dir/..")"
 source "$root_dir/config.env"
+
+# ===== Initialize output directories =====
+$root_dir/init_output_dirs.sh
 
 # ===== ANSI color codes =====
 green="\033[0;32m"  # Success messages
