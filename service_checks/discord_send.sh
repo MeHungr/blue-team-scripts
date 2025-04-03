@@ -22,20 +22,17 @@ ensure_jq_installed() {
 
 ensure_jq_installed
 
-# ===== Input Handling =====
+# ===== Input =====
 message="$1"
 discord_webhook_url="$2"
-max_chars=1900  # Slightly under Discord's 2000-char limit
+max_chars=1900
 
-# ===== Usage Help =====
 if [[ -z "$message" || -z "$discord_webhook_url" ]]; then
     echo "Usage: $0 <message> <discord_webhook_url>"
-    echo "Example:"
-    echo "  $0 \"The system check failed!\" https://discord.com/api/webhooks/..."
     exit 1
 fi
 
-# ===== Function: Send one chunk =====
+# ===== Send one chunk =====
 send_chunk() {
     local chunk="$1"
     curl -s -X POST "$discord_webhook_url" \
@@ -48,7 +45,13 @@ send_chunk() {
     fi
 }
 
-# ===== Split and send message =====
-while IFS= read -r -n "$max_chars" chunk || [[ -n "$chunk" ]]; do
+# ===== Split by characters and send =====
+i=0
+msg_len=${#message}
+
+while [ $i -lt $msg_len ]; do
+    chunk="${message:$i:$max_chars}"
     send_chunk "$chunk"
-done < <(printf "%s" "$message")
+    ((i+=max_chars))
+done
+
