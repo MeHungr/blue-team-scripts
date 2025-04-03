@@ -52,6 +52,19 @@ show_log_summary() {
     (cat "$run_log"; echo -e "${green}Done! The full log can be viewed at: ${yellow}$full_log${reset}") | less -R
 }
 
+# Clear the single-run log
+> "$run_log"
+
+# ===== Log Header =====
+{
+    echo "==================== SERVICE UPTIME CHECK ===================="
+    echo "Timestamp: $(date '+%Y-%m-%d %H:%M:%S')"
+    echo "Hostname: $(hostname)"
+    echo "Mode: $MODE"
+    echo "============================================================="
+    echo
+} >> "$run_log"
+
 # ===== Run All Checks =====
 run_check "$ROOT_DIR/service_checks/check_firewall.sh"
 run_check "$ROOT_DIR/service_checks/check_services.sh"
