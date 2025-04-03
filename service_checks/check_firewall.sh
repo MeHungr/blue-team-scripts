@@ -1,10 +1,11 @@
 #!/bin/bash
 #
-# Intended to be used with ./service_uptime_check.sh, unless used with the --set-baseline flag.
+# Intended to be used with ./service_uptime_check.sh.
 # This flag is used to change the baseline used when comparing the firewall rules.
+#
 # Usage:
 #   ./check_firewall.sh                # Compares current ruleset to baseline and restores if mismatched
-#   ./check_firewall.sh --set-baseline # Interactively updates the baseline file if changes are approved
+#   ./check_firewall.sh baseline       # Interactively updates the baseline file if changes are approved
 #
 # Requires:
 #   - nftables installed and configured
@@ -28,6 +29,9 @@ green="\033[0;32m"  # Success messages
 yellow="\033[1;33m"  # Warnings
 red="\033[0;31m"    # Errors
 reset="\033[0m"      # Reset text color
+
+# ===== Set mode =====
+MODE="${1:-check}"
 
 # ===== Check that this is run as root =====
 if [ "$EUID" -ne 0 ]; then
@@ -107,7 +111,7 @@ compare_ruleset () {
 }
 
 # ===== Set new baseline =====
-if [[ "$1" == "--set-baseline" ]]; then
+if [[ "$MODE" == "baseline" ]]; then
     echo -e "${yellow}[$host] [INFO] Comparing current ruleset to baseline before overwriting...${reset}"
     nft list ruleset > "$temp_file"
 
@@ -136,7 +140,8 @@ if [[ "$1" == "--set-baseline" ]]; then
     fi
 fi
 
-# ===== Main Execution =====
-get_ruleset
-compare_ruleset
-
+# ===== Check firewall =====
+if [ "$MODE" == "check" ]; then
+	get_ruleset
+	compare_ruleset
+fi

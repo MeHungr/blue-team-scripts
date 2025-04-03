@@ -10,6 +10,25 @@ yellow="\033[1;33m"  # Warnings
 red="\033[0;31m"    # Errors
 reset="\033[0m"      # Reset text color
 
+MODE="${1:-check}"
+
+case "$MODE" in
+    check|baseline)
+        echo "[INFO] Running in $MODE mode"
+        ;;
+    help|--help|-h)
+        echo "Usage: $0 [check|baseline]"
+        echo "  check     - run service and system checks (default)"
+        echo "  baseline  - create or update baseline files"
+        exit 0
+        ;;
+    *)
+        echo "[ERROR] Unknown mode: $MODE"
+        echo "Run '$0 help' for usage."
+        exit 1
+        ;;
+esac
+
 # The full uptime log (persistent)
 full_log="$LOG_DIR/service_check_full.log"
 # The single-run log (overwritten each run)
@@ -19,7 +38,7 @@ run_log="$LOG_DIR/service_check.log"
 > "$run_log"
 
 # ===== Run Firewall Check =====
-firewall_output="$("$ROOT_DIR/service_checks/check_firewall.sh")"
+firewall_output="$("$ROOT_DIR/service_checks/check_firewall.sh" "$MODE")"
 firewall_exit=$?
 firewall_log_path="$(echo "$firewall_output" | head -n 1)"
 
