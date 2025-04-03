@@ -16,13 +16,7 @@
 
 baseline_dir="$BASELINE_DIR"  # Directory where baseline firewall rules are stored
 temp_file="/tmp/current_nftables_rules.$$"  # Temporary file to store current ruleset
-log_file="/tmp/check_firewall.log.$$"  # Temporary log file for script output
 host="$(hostname)"  # Hostname for tagging
-
-# Redirect all script output to the log file
-exec > >(tee "$log_file") 2>&1
-
-echo "$log_file" # Echoes the location of the log file at the top for use in the main script
 
 # ===== ANSI color codes =====
 green="\033[0;32m"  # Success messages
