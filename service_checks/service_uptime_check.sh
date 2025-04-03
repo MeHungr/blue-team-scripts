@@ -20,6 +20,7 @@ if [[ -n "$firewall_log_path" && "$firewall_log_path" == /* && -f "$firewall_log
 else
 	echo "$firewall_output" | tail -n +2 >> "$run_log"
 	echo "[LOG] Firewall check did not return a valid log path or the file is empty." >> "$run_log"
+fi
 # ===== Append this run's log to the full uptime log =====
 cat "$run_log" >> "$full_log"
 
