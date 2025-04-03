@@ -73,7 +73,8 @@ compare_ruleset () {
         diff -u "$baseline_file" "$temp_file"  # Show the differences
 
         # Restore to the baseline file
-        nft -f "$baseline_file"
+	nft flush ruleset
+	nft -f "$baseline_file"
         if [ $? -eq 0 ]; then
             nft list ruleset > /etc/nftables.conf
             systemctl restart nftables
