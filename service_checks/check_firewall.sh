@@ -10,17 +10,17 @@ log_file="/tmp/check_firewall.log.$$"  # Temporary log file for script output
 # Redirect all script output to the log file
 exec > >(tee "$log_file") 2>&1
 
-# ===== Check that this is run as root =====
-if [ "$EUID" -ne 0 ]; then
-  echo -e "${red}[FAIL] This script must be run as root.${reset}"
-  exit 1 # Not run as root
-fi
-
 # ===== ANSI color codes =====
 green="\033[0;32m"  # Success messages
 yellow="\033[1;33m"  # Warnings
 red="\033[0;31m"    # Errors
 reset="\033[0m"      # Reset text color
+
+# ===== Check that this is run as root =====
+if [ "$EUID" -ne 0 ]; then
+  echo -e "${red}[FAIL] This script must be run as root.${reset}"
+  exit 1 # Not run as root
+fi
 
 # ===== Check for presence of nft command =====
 if command -v nft &>/dev/null; then
@@ -93,7 +93,6 @@ compare_ruleset () {
 }
 
 # ===== Main Execution =====
+echo -e "$log_file" # Echoes the location of the log file at the top for use in the main script
 get_ruleset
 compare_ruleset
-echo "$log_file" # Echoes the location of the log file
-
