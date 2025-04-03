@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# ===== Source config.env =====
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+root_dir="$(dirname "$script_dir")"
+source "$root_dir/config.env"
+
 # ===== ANSI color codes =====
 green="\033[0;32m"  # Success messages
 yellow="\033[1;33m"  # Warnings
@@ -7,9 +12,9 @@ red="\033[0;31m"    # Errors
 reset="\033[0m"      # Reset text color
 
 # The full uptime log (persistent)
-full_log="/var/log/service_check_full.log"
+full_log="$LOG_DIR/service_check_full.log"
 # The single-run log (overwritten each run)
-run_log="/var/log/service_check.log"
+run_log="$LOG_DIR/service_check.log"
 
 # Clear the single run log
 > "$run_log"
@@ -31,8 +36,9 @@ fi
 cat "$run_log" >> "$full_log"
 
 # ===== Send this run's log to discord =====
-./discord_send.sh "$(cat $run_log)"
-
+if [ "$DISCORD" == true ]; then
+	./discord_send.sh "$(cat $run_log)"
+fi
 # ===== Show user output in less =====
 (cat "$run_log"; echo -e "${green}Done! The full log can be viewed at: ${yellow}$full_log${reset}") | less -R
 

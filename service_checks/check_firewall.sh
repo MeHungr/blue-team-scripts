@@ -13,7 +13,12 @@
 # check_firewall.sh
 # Description: Compares current firewall rules to a baseline set of rules and reports discrepancies
 
-baseline_dir="/var/baselines"  # Directory where baseline firewall rules are stored
+# ===== Source config.env =====
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+root_dir="$(dirname "$script_dir")"
+source "$root_dir/config.env"
+
+baseline_dir="$BASELINE_DIR"  # Directory where baseline firewall rules are stored
 temp_file="/tmp/current_nftables_rules.$$"  # Temporary file to store current ruleset
 log_file="/tmp/check_firewall.log.$$"  # Temporary log file for script output
 host="$(hostname)"  # Hostname for tagging
@@ -121,12 +126,16 @@ if [[ "$1" == "--set-baseline" ]]; then
         if [[ "$confirm" =~ ^[Yy]$ ]]; then
             mv "$temp_file" "$baseline_file"
             echo -e "${green}[$host] [OK] Baseline updated successfully.${reset}"
-            ./discord_send.sh "[$host] Baseline firewall ruleset was updated via --set-baseline at $(date)"
-            exit 0
+            if [ "$DISCORD" == true ]; then
+	    	./discord_send.sh "[$host] Baseline firewall ruleset was updated via --set-baseline at $(date)"
+	    fi
+    	    exit 0
         else
             echo -e "${yellow}[$host] [INFO] Baseline update canceled.${reset}"
-            ./discord_send.sh "[$host] Baseline update was canceled via --set-baseline at $(date)"
-            rm -f "$temp_file"
+            if [ "$DISCORD" == true ]; then
+	    	./discord_send.sh "[$host] Baseline update was canceled via --set-baseline at $(date)"
+	    fi
+    	    rm -f "$temp_file"
             exit 7
         fi
     fi
