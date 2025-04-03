@@ -10,6 +10,8 @@ log_file="/tmp/check_firewall.log.$$"  # Temporary log file for script output
 # Redirect all script output to the log file
 exec > >(tee "$log_file") 2>&1
 
+echo "$log_file" # Echoes the location of the log file at the top for use in the main script
+
 # ===== ANSI color codes =====
 green="\033[0;32m"  # Success messages
 yellow="\033[1;33m"  # Warnings
@@ -93,8 +95,33 @@ compare_ruleset () {
 	fi
 }
 
+# ===== Set new baseline =====
+
+if [[ "$1" == "--set-baseline" ]]; then
+    echo -e "${yellow}[INFO] Comparing current ruleset to baseline before overwriting...${reset}"
+    nft list ruleset > "$temp_file"
+    
+    if diff -u "$baseline_file" "$temp_file"; then
+        echo -e "${green}[OK] No differences found. Baseline already up to date.${reset}"
+        rm -f "$temp_file"
+        exit 0
+    else
+        echo -e "${yellow}[WARN] Differences detected.${reset}"
+        read -p "Overwrite existing baseline with current ruleset? [y/N]: " confirm
+        if [[ "$confirm" =~ ^[Yy]$ ]]; then
+            mv "$temp_file" "$baseline_file"
+            echo -e "${green}[OK] Baseline updated successfully.${reset}"
+            exit 0
+        else
+            echo -e "${yellow}[INFO] Baseline update canceled.${reset}"
+            rm -f "$temp_file"
+            exit 7
+        fi
+    fi
+fi
+
 # ===== Main Execution =====
-echo "$log_file" # Echoes the location of the log file at the top for use in the main script
 get_ruleset
 compare_ruleset
+
 
