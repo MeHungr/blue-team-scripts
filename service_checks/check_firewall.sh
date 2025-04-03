@@ -126,13 +126,13 @@ if [[ "$1" == "--set-baseline" ]]; then
         if [[ "$confirm" =~ ^[Yy]$ ]]; then
             mv "$temp_file" "$baseline_file"
             echo -e "${green}[$host] [OK] Baseline updated successfully.${reset}"
-            if [ "$DISCORD" == true ]; then
+            if [ "$DISCORD" = true ]; then
 	    	./discord_send.sh "[$host] Baseline firewall ruleset was updated via --set-baseline at $(date)"
 	    fi
     	    exit 0
         else
             echo -e "${yellow}[$host] [INFO] Baseline update canceled.${reset}"
-            if [ "$DISCORD" == true ]; then
+            if [ "$DISCORD" = true ]; then
 	    	./discord_send.sh "[$host] Baseline update was canceled via --set-baseline at $(date)"
 	    fi
     	    rm -f "$temp_file"

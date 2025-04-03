@@ -36,7 +36,7 @@ fi
 cat "$run_log" >> "$full_log"
 
 # ===== Send this run's log to discord =====
-if [ "$DISCORD" == true ]; then
+if [ "$DISCORD" = true ]; then
 	./discord_send.sh "$(cat $run_log)"
 fi
 # ===== Show user output in less =====
