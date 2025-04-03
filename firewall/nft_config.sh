@@ -6,8 +6,10 @@
 #   ./nft_config.sh -a      # Apply default nftables ruleset
 #   ./nft_config.sh -s      # Save current ruleset to /etc/nftables.conf
 #   ./nft_config.sh -r      # Restore nftables rules from /etc/nftables.backup
+#   ./nft_config.sh -f      # Flush current nftables ruleset
 #   ./nft_config.sh -ia     # Install and apply rules in one step
 #   ./nft_config.sh -rs     # Restore from backup and save it to config for persistence
+#   ./nft_config.sh -ifa    # Flush, install, and apply rules in one step
 
 set -e
 
@@ -63,6 +65,12 @@ enable_nftables() {
     systemctl enable --now nftables
 }
 
+# Flush current ruleset
+flush_ruleset() {
+    echo -e "${yellow}Flushing current nftables ruleset...${reset}"
+    nft flush ruleset
+}
+
 # Apply a default nftables ruleset (with backup if rules exist)
 apply_default_ruleset() {
     if nft list ruleset | grep -q 'table'; then
@@ -73,8 +81,6 @@ apply_default_ruleset() {
     echo -e "${green}Applying basic default nftables ruleset...${reset}"
     cat <<EOF > /etc/nftables.conf
 #!/usr/sbin/nft -f
-
-flush ruleset
 
 table inet filter {
     chain input {
@@ -126,20 +132,23 @@ restore_backup_ruleset() {
 
 # Display help message
 display_help() {
-    echo -e "${bold}Usage: $0 [-i] [-a] [-s] [-r]${reset}"
+    echo -e "${bold}Usage: $0 [-i] [-a] [-s] [-r] [-f]${reset}"
     echo "  -i    Install and enable nftables"
     echo "  -a    Apply default nftables ruleset"
     echo "  -s    Save current in-memory ruleset to /etc/nftables.conf"
     echo "  -r    Restore nftables ruleset from /etc/nftables.backup"
+    echo "  -f    Flush current nftables ruleset"
     echo ""
     echo "Example:"
-    echo "  $0 -ia    # Install and apply default ruleset"
-    echo "  $0 -rs    # Restore from backup and save it to config for persistence"
+    echo "  $0 -ia     # Install and apply default ruleset"
+    echo "  $0 -rs     # Restore from backup and save it to config for persistence"
+    echo "  $0 -f      # Flush current ruleset only"
+    echo "  $0 -ifa    # Flush, install, and apply rules in one step"
     exit 1
 }
 
 # Parse options with getopts
-while getopts "iasr" opt; do
+while getopts "iasrf" opt; do
     case "$opt" in
         i)
             distro=$(detect_distro)
@@ -155,6 +164,9 @@ while getopts "iasr" opt; do
             ;;
         r)
             restore_backup_ruleset
+            ;;
+        f)
+            flush_ruleset
             ;;
         *)
             display_help
