@@ -37,14 +37,36 @@ run_log="$LOG_DIR/service_check.log"
 > "$run_log"
 
 # ===== Function: run_check =====
+# Runs a check script with given mode and optionally
+# sends output to discord.
 run_check() {
     local script_path="$1"
-    local label="$(basename "$script_path")"
+    local label
+    label="$(basename "$script_path" .sh)"  # check_firewall
+    local temp_log="/tmp/${label}_check.log"
 
-    echo -e "[RUNNING] $label" | tee -a "$run_log"
-    "$script_path" "$MODE" | tee >(tee -a "$full_log") >> "$run_log"
-    echo -e "[DONE] $label" | tee -a "$run_log"
-    echo | tee -a "$run_log"
+    echo "[RUNNING] $label" | tee -a "$run_log"
+
+    # Run check and capture logs
+    "$script_path" "$mode" | tee >(tee -a "$full_log") >> "$temp_log"
+    cat "$temp_log" >> "$run_log"
+
+    echo "[DONE] $label" | tee -a "$run_log"
+    echo >> "$run_log"
+
+    # ===== Discord Output =====
+    if [ "$discord" = true ]; then
+        # Extract the check name and convert to uppercase
+        local base="${label#check_}"                # check_firewall → firewall
+        local var_name="${base^^}_WEBHOOK_URL"      # firewall → FIREWALL_WEBHOOK_URL
+        local webhook="${!var_name}"                # Indirect expansion
+
+        if [[ -n "$webhook" ]]; then
+            ./discord_send.sh "$(cat "$temp_log")" "$webhook"
+        else
+            echo "[WARN] No webhook configured for $base ($var_name not set)" | tee -a "$run_log"
+        fi
+    fi
 }
 
 # ===== Function: show_log_summary =====
