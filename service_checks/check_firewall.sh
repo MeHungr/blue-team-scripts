@@ -1,5 +1,15 @@
 #!/bin/bash
 #
+# Intended to be used with ./service_uptime_check.sh, unless used with the --set-baseline flag.
+# This flag is used to change the baseline used when comparing the firewall rules.
+# Usage:
+#   ./check_firewall.sh                # Compares current ruleset to baseline and restores if mismatched
+#   ./check_firewall.sh --set-baseline # Interactively updates the baseline file if changes are approved
+#
+# Requires:
+#   - nftables installed and configured
+#   - discord_send.sh script in the same directory for webhook alerts
+#
 # check_firewall.sh
 # Description: Compares current firewall rules to a baseline set of rules and reports discrepancies
 
