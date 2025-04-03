@@ -1,12 +1,10 @@
 #!/bin/bash
 
 # ===== Source config.env =====
-script_dir="$(dirname "$(realpath "$0")")"
-root_dir="$(realpath "$script_dir/..")"
-source "$root_dir/config.env"
-
-# ===== Initialize output directories =====
-$root_dir/init_output_dirs.sh
+# Also initializes output directories and configures paths
+source "$(dirname "$(realpath "$0")")/../setup/paths.sh"
+source "$ROOT_DIR/config.env"
+source "$ROOT_DIR/setup/init_output_dirs.sh"
 
 # ===== ANSI color codes =====
 green="\033[0;32m"  # Success messages
@@ -23,7 +21,7 @@ run_log="$LOG_DIR/service_check.log"
 > "$run_log"
 
 # ===== Run Firewall Check =====
-firewall_output="$(./check_firewall.sh)"
+firewall_output="$("$ROOT_DIR/service_checks/check_firewall.sh")"
 firewall_exit=$?
 firewall_log_path="$(echo "$firewall_output" | head -n 1)"
 

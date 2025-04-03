@@ -13,11 +13,6 @@
 # check_firewall.sh
 # Description: Compares current firewall rules to a baseline set of rules and reports discrepancies
 
-# ===== Source config.env =====
-script_dir="$(dirname "$(realpath "$0")")"
-root_dir="$(realpath "$script_dir/..")"
-source "$root_dir/config.env"
-
 baseline_dir="$BASELINE_DIR"  # Directory where baseline firewall rules are stored
 temp_file="/tmp/current_nftables_rules.$$"  # Temporary file to store current ruleset
 log_file="/tmp/check_firewall.log.$$"  # Temporary log file for script output
