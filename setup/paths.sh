@@ -4,13 +4,34 @@
 SCRIPT_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 ROOT_DIR="$(realpath "$SCRIPT_DIR/..")"
 
-# Load environment config
+# Load config
 CONFIG_PATH="$ROOT_DIR/config.env"
-source "$CONFIG_PATH"
+[ -f "$CONFIG_PATH" ] && source "$CONFIG_PATH"
 
-# Normalize and export all key paths
+# Helper to resolve path
+resolve_path() {
+    case "$1" in
+        /*) echo "$1" ;;                     # absolute
+        *) echo "$ROOT_DIR/$1" ;;           # relative to root
+    esac
+}
+
+# Resolve OUTPUT_DIR first
+RAW_OUTPUT_DIR="$(resolve_path "${OUTPUT_DIR:-output}")"
+
+# Now define others based on resolved OUTPUT_DIR
+RAW_LOG_DIR="$RAW_OUTPUT_DIR/logs"
+RAW_BACKUP_DIR="$RAW_OUTPUT_DIR/backups"
+RAW_BASELINE_DIR="$RAW_OUTPUT_DIR/baselines"
+
+# Create all dirs before resolving them
+mkdir -p "$RAW_OUTPUT_DIR" "$RAW_LOG_DIR" "$RAW_BACKUP_DIR" "$RAW_BASELINE_DIR"
+
+# Now realpath them (safely)
+export OUTPUT_DIR="$(realpath "$RAW_OUTPUT_DIR")"
+export LOG_DIR="$(realpath "$RAW_LOG_DIR")"
+export BACKUP_DIR="$(realpath "$RAW_BACKUP_DIR")"
+export BASELINE_DIR="$(realpath "$RAW_BASELINE_DIR")"
 export ROOT_DIR
-export OUTPUT_DIR="$(realpath "$ROOT_DIR/${OUTPUT_DIR:-output}")"
-export LOG_DIR="$(realpath "$ROOT_DIR/${LOG_DIR:-$OUTPUT_DIR/logs}")"
-export BACKUP_DIR="$(realpath "$ROOT_DIR/${BACKUP_DIR:-$OUTPUT_DIR/backups}")"
-export BASELINE_DIR="$(realpath "$ROOT_DIR/${BASELINE_DIR:-$OUTPUT_DIR/baselines}")"
+
+

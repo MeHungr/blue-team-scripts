@@ -3,8 +3,6 @@
 # ===== Source config.env =====
 # Also initializes output directories and configures paths
 source "$(dirname "$(realpath "$0")")/../setup/paths.sh"
-source "$ROOT_DIR/config.env"
-source "$ROOT_DIR/setup/init_output_dirs.sh"
 
 # ===== ANSI color codes =====
 green="\033[0;32m"  # Success messages
