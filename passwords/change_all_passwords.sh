@@ -30,7 +30,7 @@ while true; do
         ;;
         -p|--password)
             input_password="$2"
-            shift
+            shift 2
         ;;
         --)
             shift
