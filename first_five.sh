@@ -4,9 +4,6 @@
 # If run in headless mode, expects config.env file in the same directory with:
 # headless_pass="your_password_here"
 
-# IMPORTANT: CHANGE THIS!
-excluded_from_pw_change=("blackteam")
-
 personal_user="sockpuppet"
 backup_user="puppetmaster"
 script_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
@@ -95,7 +92,7 @@ change_passwords() {
     echo "[*] Changing passwords..."
     
     if [ "$headless" = false ]; then
-        "$script_dir/passwords/change_all_passwords.sh" "${excluded_from_pw_change[@]}"
+        "$script_dir/passwords/change_all_passwords.sh" $excluded_from_pw_change
     else
         if [ -z "$headless_pass" ]; then
             echo "[X] Headless mode requires 'headless_pass' in config.env"
