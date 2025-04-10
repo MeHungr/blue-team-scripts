@@ -16,7 +16,9 @@ else
     echo "No config.env file found in $script_dir"
 fi
 
-trap 'rm -f "$script_dir/config.env"' EXIT
+if [ "$headless" = true ]; then
+    trap 'rm -f "$script_dir/config.env"' EXIT
+fi
 
 # ===== Detect Distro =====
 if [ -f /etc/os-release ]; then

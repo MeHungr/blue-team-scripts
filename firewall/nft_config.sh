@@ -27,6 +27,7 @@ if [ "$EUID" -ne 0 ]; then
     echo "This script must be run as root. Exiting..."
     exit 1
 fi
+
 # Normalize and detect the Linux distribution
 detect_distro() {
     if [ -f /etc/os-release ]; then
