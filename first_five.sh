@@ -162,9 +162,9 @@ change_passwords
 harden_ssh
 "$script_dir/hardening/history_timestamps.sh"
 if [ "$headless" = true ]; then
-    "$script_dir/nft_config.sh" -l
+    "$script_dir/firewall/nft_config.sh" -l
 else
-    "$script_dir/nft_config.sh"
+    "$script_dir/firewall/nft_config.sh"
 fi
 
 echo "[V] Initialization complete at $(date) on $(hostname)"
