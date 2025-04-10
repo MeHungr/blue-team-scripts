@@ -28,9 +28,10 @@ Customize firewall behavior here (used by nft_config.sh):
     Set default policies
 
 ### passwords/change_all_passwords.sh
-
+```
 Make sure you modify the users to be excluded from lock here.
 Just edit the file. It's in the first few lines.
+```
 
 ## 🧩 What It Does
 
