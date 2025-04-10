@@ -3,7 +3,7 @@
 # Usage: ./exclude_users_password_script.sh <users to exclude from password change separated by spaces>
 
 # Array of users to exclude from lock
-excluded_from_lock=("sockpuppet" "puppetmaster" "blackteam")
+excluded_from_lock=("sockpuppet" "puppetmaster" "blackteam" "root")
 
 
 
