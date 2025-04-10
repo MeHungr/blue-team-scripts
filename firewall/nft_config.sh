@@ -11,8 +11,6 @@
 #   ./nft_config.sh -rs     # Restore from backup and save it to config for persistence
 #   ./nft_config.sh -ifa    # Flush, install, and apply rules in one step
 
-set -e
-
 red='\e[31m'
 green='\e[32m'
 yellow='\e[33m'
