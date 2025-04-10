@@ -77,13 +77,17 @@ enable_nftables() {
 
 # Flush current ruleset
 flush_ruleset() {
+    if nft list ruleset | grep -q 'table'; then
+        echo -e "${yellow}Warning: Existing nftables rules detected. Backing them up to /etc/nftables.backup${reset}"
+        nft list ruleset > /etc/nftables.backup
+    fi
     echo -e "${yellow}Flushing current nftables ruleset...${reset}"
     nft flush ruleset
 }
 
 # Apply a default nftables ruleset (with backup if rules exist)
 apply_default_ruleset() {
-    if nft list ruleset | grep -q 'table'; then
+    if nft list ruleset | grep -q 'table' && [ ! -s "/etc/nftables.backup" ]; then
         echo -e "${yellow}Warning: Existing nftables rules detected. Backing them up to /etc/nftables.backup${reset}"
         nft list ruleset > /etc/nftables.backup
     fi
