@@ -18,10 +18,16 @@ green='\e[32m'
 yellow='\e[33m'
 bold='\e[1m'
 reset='\e[0m'
+
+headless=false
+
+script_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+config_file="$script_dir/default_rules.conf"
+
 # ===== Check for root =====
 if [ "$EUID" -ne 0 ]; then
-	echo "This script must be run as root. Exiting..."
-	exit 1
+    echo "This script must be run as root. Exiting..."
+    exit 1
 fi
 # Normalize and detect the Linux distribution
 detect_distro() {
@@ -39,10 +45,10 @@ install_nftables() {
         *ubuntu*|*debian*)
             apt-get update
             apt-get install -y nftables
-            ;;
+        ;;
         *fedora*)
             dnf install -y nftables
-            ;;
+        ;;
         *centos*|*rhel*|*rocky*|*almalinux*)
             if command -v dnf >/dev/null 2>&1; then
                 dnf install -y nftables
@@ -50,17 +56,17 @@ install_nftables() {
                 yum install -y epel-release
                 yum install -y nftables
             fi
-            ;;
+        ;;
         *arch*)
             pacman -Sy --noconfirm nftables
-            ;;
+        ;;
         *suse*|*opensuse*|*sles*)
             zypper install -y nftables
-            ;;
+        ;;
         *)
             echo -e "${red}Unsupported distribution: $1${reset}"
             exit 1
-            ;;
+        ;;
     esac
 }
 
@@ -81,37 +87,32 @@ apply_default_ruleset() {
         echo -e "${yellow}Warning: Existing nftables rules detected. Backing them up to /etc/nftables.backup${reset}"
         nft list ruleset > /etc/nftables.backup
     fi
-
-    echo -e "${green}Applying basic default nftables ruleset...${reset}"
-    cat <<EOF > /etc/nftables.conf
-#!/usr/sbin/nft -f
-
-table inet filter {
-    chain input {
-        type filter hook input priority 0;
-        policy drop;
-
-        ct state established,related accept
-        iif "lo" accept
-        tcp dport { 22 } accept
-
-        log prefix "nftables-drop-input: " flags all
-    }
-
-    chain forward {
-        type filter hook forward priority 0;
-        policy drop;
-
-        log prefix "nftables-drop-forward: " flags all
-    }
-
-    chain output {
-        type filter hook output priority 0;
-        policy accept;
-    }
-}
-EOF
-
+    
+    if [ "$headless" = true ]; then
+        echo -e "${green}[HEADLESS] Applying default ruleset...${reset}"
+        nft -f "$config_file"
+        nft list ruleset > /etc/nftables.conf
+    else
+        
+        if [ -f /etc/nftables.backup ]; then
+            if diff -u /etc/nftables.backup "$config_file"; then
+                echo -e "${green}Ruleset matches backup."
+            else
+                diff -u /etc/nftables.backup "$config_file"
+            fi
+        fi
+        
+        read -p "Update ruleset to default configuration? [y/N]: " update
+        
+        if [[ "$update" =~ ^[Yy]$ ]]; then
+            echo -e "${green}Applying basic default nftables ruleset...${reset}"
+            nft -f "$config_file"
+            nft list ruleset > /etc/nftables.conf
+        else
+            echo -e "${red}Leaving firewall ruleset as is"
+        fi
+    fi
+    
     systemctl restart nftables
 }
 
@@ -142,6 +143,8 @@ display_help() {
     echo "  -s    Save current in-memory ruleset to /etc/nftables.conf"
     echo "  -r    Restore nftables ruleset from /etc/nftables.backup"
     echo "  -f    Flush current nftables ruleset"
+    echo "  -l    Headless mode (auto-apply ruleset without prompting)"
+    echo "  -h    Show this help message"
     echo ""
     echo "Example:"
     echo "  $0 -ia     # Install and apply default ruleset"
@@ -151,37 +154,53 @@ display_help() {
     exit 1
 }
 
+# ===== Check for nft installation =====
+if ! command -v nft >/dev/null 2>&1; then
+    echo -e "${red}nft is not installed. Run with -i first.${reset}"
+    exit 1
+fi
+
 # Parse options with getopts
-while getopts "iasrf" opt; do
+while getopts "iasrfl" opt; do
     case "$opt" in
         i)
             distro=$(detect_distro)
             echo -e "${green}Detected distro: $distro${reset}"
             install_nftables "$distro"
             enable_nftables
-            ;;
+        ;;
         a)
-            apply_default_ruleset
-            ;;
+            apply=true
+        ;;
         s)
-            save_current_ruleset
-            ;;
+            save=true
+        ;;
         r)
-            restore_backup_ruleset
-            ;;
+            restore=true
+        ;;
         f)
-            flush_ruleset
-            ;;
+            flush=true
+        ;;
+        l)
+            headless=true
+        ;;
+        h)
+            help=true
+        ;;
         *)
             display_help
-            ;;
+        ;;
     esac
     found=true
-
 done
 
+[ "$flush" = true ] && flush_ruleset
+[ "$apply" = true ] && apply_default_ruleset
+[ "$save" = true ] && save_current_ruleset
+[ "$restore" = true ] && restore_backup_ruleset
+
+
 # If no flags were provided
-if [ -z "$found" ]; then
+if [ -z "$found" ] || [ "$help" = true ]; then
     display_help
 fi
-

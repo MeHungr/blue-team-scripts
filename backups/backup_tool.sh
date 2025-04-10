@@ -31,7 +31,11 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # === DEFAULT CONFIGURATION ===
+
 default_dirs="/etc,/var/log,/home,/opt"
+if [ -d "/var/www" ]; then
+    default_dirs="${default_dirs},/var/www"
+fi
 backup_dir="/var/backups/blue-team"
 timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
 backup_name="backup_$timestamp.tar.gz"
