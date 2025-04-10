@@ -16,9 +16,6 @@ else
     echo "No config.env file found in $script_dir"
 fi
 
-if [ "$headless" = true ]; then
-    trap 'rm -f "$script_dir/config.env"' EXIT
-fi
 
 # ===== Detect Distro =====
 if [ -f /etc/os-release ]; then
@@ -157,6 +154,10 @@ while true; do
         ;;
     esac
 done
+
+if [ "$headless" = true ]; then
+    trap 'rm -f "$script_dir/config.env"' EXIT
+fi
 
 update_system
 make_blue_users
