@@ -99,7 +99,7 @@ apply_default_ruleset() {
     else
         
         if [ -f /etc/nftables.backup ]; then
-            if diff -u /etc/nftables.backup "$config_file"; then
+            if diff -q /etc/nftables.backup "$config_file"; then
                 echo -e "${green}Ruleset matches backup."
             else
                 diff -u /etc/nftables.backup "$config_file"
