@@ -103,18 +103,18 @@ apply_default_ruleset() {
                 echo -e "${green}Ruleset matches backup."
             else
                 diff -u /etc/nftables.backup <(tail -n +2 "$config_file")
+                read -p "Update ruleset to default configuration? [y/N]: " update
+                
+                if [[ "$update" =~ ^[Yy]$ ]]; then
+                    echo -e "${green}Applying basic default nftables ruleset...${reset}"
+                    nft -f "$config_file"
+                    nft list ruleset > /etc/nftables.conf
+                else
+                    echo -e "${red}Leaving firewall ruleset as is"
+                fi
             fi
         fi
         
-        read -p "Update ruleset to default configuration? [y/N]: " update
-        
-        if [[ "$update" =~ ^[Yy]$ ]]; then
-            echo -e "${green}Applying basic default nftables ruleset...${reset}"
-            nft -f "$config_file"
-            nft list ruleset > /etc/nftables.conf
-        else
-            echo -e "${red}Leaving firewall ruleset as is"
-        fi
     fi
     
     systemctl restart nftables
