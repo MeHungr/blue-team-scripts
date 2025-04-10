@@ -109,7 +109,7 @@ apply_default_ruleset() {
                     nft -f "$config_file"
                     nft list ruleset > /etc/nftables.conf
                 else
-                    echo -e "${red}Leaving firewall ruleset as is"
+                    echo -e "${red}Leaving firewall ruleset as is${reset}"
                 fi
             fi
         fi
