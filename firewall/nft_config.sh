@@ -90,6 +90,8 @@ flush_ruleset() {
 
 # Apply a default nftables ruleset (with backup if rules exist)
 apply_default_ruleset() {
+    local disarmed=false
+    
     if nft list ruleset | grep -q 'table' && [ ! -s "/etc/nftables.backup" ]; then
         echo -e "${yellow}Warning: Existing nftables rules detected. Backing them up to /etc/nftables.backup${reset}"
         nft list ruleset > /etc/nftables.backup
@@ -118,12 +120,17 @@ apply_default_ruleset() {
     # Lockout protection (Dead Man's Switch)
     echo -e "${green}[DMS] Press CTRL + C to persist the ruleset. Failure to do so will result in a rollback for lockout protection.${reset}"
     # Persist on SIGINT (Ctrl + C)
-    trap 'echo -e "${green}[DMS] SIGINT received. Persisting ruleset...${reset}"; nft list ruleset > /etc/nftables.conf; exit 0;' SIGINT
+    trap 'echo -e "${green}[DMS] SIGINT received. Persisting ruleset...${reset}"; disarmed=true;' SIGINT
     # Else, wait 15 seconds and rollback
     sleep 15
-    echo -e "${red}[DMS] No persist signal received. Rolling back firewall ruleset...${reset}"
-    restore_backup_ruleset
-    save_current_ruleset
+    if [ "$disarmed" = true ]; then
+        echo -e "${green}[DMS] Ruleset persisted due to SIGINT.${reset}"
+        nft list ruleset > /etc/nftables.conf
+    else
+        echo -e "${red}[DMS] No persist signal received. Rolling back firewall ruleset...${reset}"
+        restore_backup_ruleset
+        save_current_ruleset
+    fi
 }
 
 # Save current ruleset to config file
