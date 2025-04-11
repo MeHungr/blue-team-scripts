@@ -165,23 +165,11 @@ change_passwords
 harden_ssh
 "$script_dir/hardening/history_timestamps.sh"
 if [ "$headless" = true ]; then
-    # Start nft_config.sh in its own process group
-    setsid bash -c "$script_dir/firewall/nft_config.sh -l -ifa" &
-    nft_pid=$!
-    
-    # Forward Ctrl+C to that group only
-    trap "echo '[first_five] Caught SIGINT. Forwarding to nft_config (PID $nft_pid PGID $nft_pid)'; kill -SIGINT -$nft_pid" SIGINT
-    
-    wait $nft_pid
+    # Interactive: run in a pseudo-terminal
+    script -qfc "$script_dir/firewall/nft_config.sh -l -ifa" /dev/null
 else
-    # Start nft_config.sh in its own process group
-    setsid bash -c "$script_dir/firewall/nft_config.sh -ifa" &
-    nft_pid=$!
-    
-    # Forward Ctrl+C to that group only
-    trap "echo '[first_five] Caught SIGINT. Forwarding to nft_config (PID $nft_pid PGID $nft_pid)'; kill -SIGINT -$nft_pid" SIGINT
-    
-    wait $nft_pid
+    # Interactive: run in a pseudo-terminal
+    script -qfc "$script_dir/firewall/nft_config.sh -ifa" /dev/null
 fi
 
 echo "[V] Initialization complete at $(date) on $(hostname)"
