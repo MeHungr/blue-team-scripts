@@ -67,6 +67,7 @@ update_system() {
 # ===== Create blue team users =====
 make_blue_users() {
     
+    echo "[*] Creating blue team users"
     # Create Personal User
     if ! id "$personal_user" &>/dev/null; then
         echo "[*] Creating personal user: $personal_user"
@@ -165,7 +166,7 @@ change_passwords
 harden_ssh
 "$script_dir/hardening/history_timestamps.sh"
 if [ "$headless" = true ]; then
-    # Interactive: run in a pseudo-terminal
+    # Run in a pseudo-terminal to preserve
     script -qfc "$script_dir/firewall/nft_config.sh -l -ifa" /dev/null
 else
     # Interactive: run in a pseudo-terminal

@@ -51,7 +51,7 @@ case $distro in
         sudo dnf reinstall -y git curl
     ;;
     arch|manjaro)
-        sudo pacman -S git curl
+        sudo pacman -S --no-confirm git curl
     ;;
 esac
 
