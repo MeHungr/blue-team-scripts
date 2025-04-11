@@ -97,7 +97,7 @@ change_passwords() {
             echo "[X] Headless mode requires 'headless_pass' in config.env"
             exit 1
         else
-            "$script_dir/passwords/change_all_passwords.sh" -l -p "$headless_pass"
+            "$script_dir/passwords/change_all_passwords.sh" -l -p "$headless_pass" $excluded_from_pw_change
             unset headless_pass
         fi
     fi
