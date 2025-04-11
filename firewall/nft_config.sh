@@ -3,13 +3,17 @@
 # nft_config.sh - Script to manage nftables installation, configuration, and persistence
 # Usage:
 #   ./nft_config.sh -i      # Install and enable nftables
-#   ./nft_config.sh -a      # Apply default nftables ruleset
+#   ./nft_config.sh -a      # Apply default nftables ruleset. If the script is not killed (ctrl + C), it will revert in 15 seconds
 #   ./nft_config.sh -s      # Save current ruleset to /etc/nftables.conf
 #   ./nft_config.sh -r      # Restore nftables rules from /etc/nftables.backup
 #   ./nft_config.sh -f      # Flush current nftables ruleset
+#   ./nft_config.sh -l      # Headless mode
 #   ./nft_config.sh -ia     # Install and apply rules in one step
 #   ./nft_config.sh -rs     # Restore from backup and save it to config for persistence
 #   ./nft_config.sh -ifa    # Flush, install, and apply rules in one step
+#   ./nft_config.sh -lifa   # Headless install
+#
+#   THIS SCRIPT INCLUDES A DEAD MAN'S SWITCH. AFTER APPLYING DEFAULT RULES, PRESS CTRL + C TO APPLY THEM. THIS STOPS YOU FROM LOCKING YOURSELF OUT.
 
 red='\e[31m'
 green='\e[32m'
@@ -94,9 +98,7 @@ apply_default_ruleset() {
     if [ "$headless" = true ]; then
         echo -e "${green}[HEADLESS] Applying default ruleset...${reset}"
         nft -f "$config_file"
-        nft list ruleset > /etc/nftables.conf
     else
-        
         if [ -f /etc/nftables.backup ]; then
             if diff -q /etc/nftables.backup <(tail -n +2 "$config_file"); then
                 echo -e "${green}Ruleset matches backup."
@@ -107,16 +109,21 @@ apply_default_ruleset() {
                 if [[ "$update" =~ ^[Yy]$ ]]; then
                     echo -e "${green}Applying basic default nftables ruleset...${reset}"
                     nft -f "$config_file"
-                    nft list ruleset > /etc/nftables.conf
                 else
                     echo -e "${red}Leaving firewall ruleset as is${reset}"
                 fi
             fi
         fi
-        
     fi
-    
-    systemctl restart nftables
+    # Lockout protection (Dead Man's Switch)
+    echo -e "${green}[DMS] Press CTRL + C to persist the ruleset. Failure to do so will result in a rollback for lockout protection.${reset}"
+    # Persist on SIGINT (Ctrl + C)
+    trap 'echo -e "${green}[DMS] SIGINT received. Persisting ruleset...${reset}"; nft list ruleset > /etc/nftables.conf; exit 0;' SIGINT
+    # Else, wait 15 seconds and rollback
+    sleep 15
+    echo -e "${red}[DMS] No persist signal received. Rolling back firewall ruleset...${reset}"
+    restore_backup_ruleset
+    save_current_ruleset
 }
 
 # Save current ruleset to config file
