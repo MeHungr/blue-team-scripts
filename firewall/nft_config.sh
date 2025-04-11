@@ -122,7 +122,9 @@ apply_default_ruleset() {
     # Persist on SIGINT (Ctrl + C)
     trap 'echo -e "${green}[DMS] SIGINT received. Persisting ruleset...${reset}"; disarmed=true;' SIGINT
     # Else, wait 15 seconds and rollback
-    sleep 15
+    sleep 15 &
+    sleep_pid=$!
+    wait $sleep_pid
     if [ "$disarmed" = true ]; then
         echo -e "${green}[DMS] Ruleset persisted due to SIGINT.${reset}"
         nft list ruleset > /etc/nftables.conf
