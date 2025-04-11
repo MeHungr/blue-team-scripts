@@ -121,7 +121,7 @@ confirm_changes() {
     read -r -p "Do you want to proceed? (y/n): " confirm
     if [[ "$confirm" != "y" ]]; then
         echo "Changes cancelled. Exiting..."
-        exit 0
+        exit 10
     fi
 }
 

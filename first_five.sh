@@ -66,7 +66,6 @@ update_system() {
 
 # ===== Create blue team users =====
 make_blue_users() {
-    
     echo "[*] Creating blue team users"
     # Create Personal User
     if ! id "$personal_user" &>/dev/null; then
@@ -92,7 +91,9 @@ change_passwords() {
     echo "[*] Changing passwords..."
     
     if [ "$headless" = false ]; then
-        "$script_dir/passwords/change_all_passwords.sh" $excluded_from_pw_change
+        if ! "$script_dir/passwords/change_all_passwords.sh" $excluded_from_pw_change; then
+            exit 1
+        fi
     else
         if [ -z "$headless_pass" ]; then
             echo "[X] Headless mode requires 'headless_pass' in config.env"
