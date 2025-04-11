@@ -22,6 +22,7 @@ bold='\e[1m'
 reset='\e[0m'
 
 headless=false
+dms=true
 
 script_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 config_file="$script_dir/default_rules.conf"
@@ -117,19 +118,23 @@ apply_default_ruleset() {
             fi
         fi
     fi
-    # Lockout protection (Dead Man's Switch)
-    echo -e "${green}[DMS] Press CTRL + C to persist the ruleset. Failure to do so will result in a rollback for lockout protection.${reset}"
-    # Persist on SIGINT (Ctrl + C)
-    trap 'echo -e "${green}[DMS] SIGINT received. Persisting ruleset...${reset}"; disarmed=true;' SIGINT
-    # Else, wait 15 seconds and rollback
-    sleep 15
-    if [ "$disarmed" = true ]; then
-        echo -e "${green}[DMS] Ruleset persisted due to SIGINT.${reset}"
-        nft list ruleset > /etc/nftables.conf
+    if [ "$dms" = true ]; then
+        # Lockout protection (Dead Man's Switch)
+        echo -e "${green}[DMS] Press CTRL + C to persist the ruleset. Failure to do so will result in a rollback for lockout protection.${reset}"
+        # Persist on SIGINT (Ctrl + C)
+        trap 'echo -e "${green}[DMS] SIGINT received. Persisting ruleset...${reset}"; disarmed=true;' SIGINT
+        # Else, wait 15 seconds and rollback
+        sleep 15
+        if [ "$disarmed" = true ]; then
+            echo -e "${green}[DMS] Ruleset persisted due to SIGINT.${reset}"
+            nft list ruleset > /etc/nftables.conf
+        else
+            echo -e "${red}[DMS] No persist signal received. Rolling back firewall ruleset...${reset}"
+            restore_backup_ruleset
+            save_current_ruleset
+        fi
     else
-        echo -e "${red}[DMS] No persist signal received. Rolling back firewall ruleset...${reset}"
-        restore_backup_ruleset
-        save_current_ruleset
+        nft list ruleset > /etc/nftables.conf
     fi
 }
 
@@ -161,6 +166,7 @@ display_help() {
     echo "  -r    Restore nftables ruleset from /etc/nftables.backup"
     echo "  -f    Flush current nftables ruleset"
     echo "  -l    Headless mode (auto-apply ruleset without prompting)"
+    echo "  -n    No Dead Man's Switch. USE WITH CAUTION"
     echo "  -h    Show this help message"
     echo ""
     echo "Example:"
@@ -200,6 +206,9 @@ while getopts "iasrfl" opt; do
         ;;
         l)
             headless=true
+        ;;
+        n)
+            dms=false
         ;;
         h)
             help=true
