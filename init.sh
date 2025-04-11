@@ -40,7 +40,9 @@ done
 if [ "$headless" = true ]; then
     "$script_dir/first_five.sh" -l
 else
-    "$script_dir/first_five.sh"
+    if ! "$script_dir/first_five.sh"; then
+        exit 10
+    fi
 fi
 
 case $distro in
@@ -51,7 +53,7 @@ case $distro in
         sudo dnf reinstall -y git curl
     ;;
     arch|manjaro)
-        sudo pacman -S git curl
+        sudo pacman -S --no-confirm git curl
     ;;
 esac
 

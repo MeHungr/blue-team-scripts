@@ -3,13 +3,17 @@
 # nft_config.sh - Script to manage nftables installation, configuration, and persistence
 # Usage:
 #   ./nft_config.sh -i      # Install and enable nftables
-#   ./nft_config.sh -a      # Apply default nftables ruleset
+#   ./nft_config.sh -a      # Apply default nftables ruleset. If the script is not killed (ctrl + C), it will revert in 15 seconds
 #   ./nft_config.sh -s      # Save current ruleset to /etc/nftables.conf
 #   ./nft_config.sh -r      # Restore nftables rules from /etc/nftables.backup
 #   ./nft_config.sh -f      # Flush current nftables ruleset
+#   ./nft_config.sh -l      # Headless mode
 #   ./nft_config.sh -ia     # Install and apply rules in one step
 #   ./nft_config.sh -rs     # Restore from backup and save it to config for persistence
 #   ./nft_config.sh -ifa    # Flush, install, and apply rules in one step
+#   ./nft_config.sh -lifa   # Headless install
+#
+#   THIS SCRIPT INCLUDES A DEAD MAN'S SWITCH. AFTER APPLYING DEFAULT RULES, PRESS CTRL + C TO APPLY THEM. THIS STOPS YOU FROM LOCKING YOURSELF OUT.
 
 red='\e[31m'
 green='\e[32m'
@@ -18,6 +22,7 @@ bold='\e[1m'
 reset='\e[0m'
 
 headless=false
+dms=true
 
 script_dir="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
 config_file="$script_dir/default_rules.conf"
@@ -86,6 +91,8 @@ flush_ruleset() {
 
 # Apply a default nftables ruleset (with backup if rules exist)
 apply_default_ruleset() {
+    local disarmed=false
+    
     if nft list ruleset | grep -q 'table' && [ ! -s "/etc/nftables.backup" ]; then
         echo -e "${yellow}Warning: Existing nftables rules detected. Backing them up to /etc/nftables.backup${reset}"
         nft list ruleset > /etc/nftables.backup
@@ -94,9 +101,7 @@ apply_default_ruleset() {
     if [ "$headless" = true ]; then
         echo -e "${green}[HEADLESS] Applying default ruleset...${reset}"
         nft -f "$config_file"
-        nft list ruleset > /etc/nftables.conf
     else
-        
         if [ -f /etc/nftables.backup ]; then
             if diff -q /etc/nftables.backup <(tail -n +2 "$config_file"); then
                 echo -e "${green}Ruleset matches backup."
@@ -107,16 +112,30 @@ apply_default_ruleset() {
                 if [[ "$update" =~ ^[Yy]$ ]]; then
                     echo -e "${green}Applying basic default nftables ruleset...${reset}"
                     nft -f "$config_file"
-                    nft list ruleset > /etc/nftables.conf
                 else
                     echo -e "${red}Leaving firewall ruleset as is${reset}"
                 fi
             fi
         fi
-        
     fi
-    
-    systemctl restart nftables
+    if [ "$dms" = true ]; then
+        # Lockout protection (Dead Man's Switch)
+        echo -e "${green}[DMS] Press CTRL + C to persist the ruleset. Failure to do so will result in a rollback for lockout protection.${reset}"
+        # Persist on SIGINT (Ctrl + C)
+        trap 'echo -e "${green}[DMS] SIGINT received. Persisting ruleset...${reset}"; disarmed=true;' SIGINT
+        # Else, wait 15 seconds and rollback
+        sleep 15
+        if [ "$disarmed" = true ]; then
+            echo -e "${green}[DMS] Ruleset persisted due to SIGINT.${reset}"
+            nft list ruleset > /etc/nftables.conf
+        else
+            echo -e "${red}[DMS] No persist signal received. Rolling back firewall ruleset...${reset}"
+            restore_backup_ruleset
+            save_current_ruleset
+        fi
+    else
+        nft list ruleset > /etc/nftables.conf
+    fi
 }
 
 # Save current ruleset to config file
@@ -147,6 +166,7 @@ display_help() {
     echo "  -r    Restore nftables ruleset from /etc/nftables.backup"
     echo "  -f    Flush current nftables ruleset"
     echo "  -l    Headless mode (auto-apply ruleset without prompting)"
+    echo "  -n    No Dead Man's Switch. USE WITH CAUTION"
     echo "  -h    Show this help message"
     echo ""
     echo "Example:"
@@ -186,6 +206,9 @@ while getopts "iasrfl" opt; do
         ;;
         l)
             headless=true
+        ;;
+        n)
+            dms=false
         ;;
         h)
             help=true

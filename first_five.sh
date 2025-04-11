@@ -66,7 +66,7 @@ update_system() {
 
 # ===== Create blue team users =====
 make_blue_users() {
-    
+    echo "[*] Creating blue team users"
     # Create Personal User
     if ! id "$personal_user" &>/dev/null; then
         echo "[*] Creating personal user: $personal_user"
@@ -91,7 +91,9 @@ change_passwords() {
     echo "[*] Changing passwords..."
     
     if [ "$headless" = false ]; then
-        "$script_dir/passwords/change_all_passwords.sh" $excluded_from_pw_change
+        if ! "$script_dir/passwords/change_all_passwords.sh" $excluded_from_pw_change; then
+            exit 1
+        fi
     else
         if [ -z "$headless_pass" ]; then
             echo "[X] Headless mode requires 'headless_pass' in config.env"
@@ -238,9 +240,11 @@ change_passwords
 harden_ssh
 "$script_dir/hardening/history_timestamps.sh"
 if [ "$headless" = true ]; then
-    "$script_dir/firewall/nft_config.sh" -l -ifa
+    # Run in a pseudo-terminal to preserve
+    script -qfc "$script_dir/firewall/nft_config.sh -l -ifa" /dev/null
 else
-    "$script_dir/firewall/nft_config.sh" -ifa
+    # Interactive: run in a pseudo-terminal
+    script -qfc "$script_dir/firewall/nft_config.sh -ifa" /dev/null
 fi
 disable_kernel_modules
 disable_ipv6_and_forwarding
