@@ -60,7 +60,7 @@ esac
 
 echo "Cloning hungrctl into $(realpath "$script_dir/..") and initializing the tool"
 cd "$script_dir/.." || exit 1
-if git clone https://github.com/MeHungr/hungrctl 2>/dev/null; then
+if git clone --depth=1 https://github.com/MeHungr/hungrctl 2>/dev/null; then
     echo "[V] Cloned hungrctl successfully"
     cd "$script_dir/../hungrctl" || exit 1
     ./init_hungrctl.sh
