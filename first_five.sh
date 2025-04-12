@@ -130,6 +130,79 @@ harden_ssh() {
     echo "[V] Done hardening sshd_config"
 }
 
+disable_kernel_modules() {
+    echo -e "[*] Disabling the loading of kernel modules"
+
+    sysctl -w kernel.modules_disabled=1 > /dev/null
+    if ! grep -q '^kernel.modules_disabled=1' /etc/sysctl.conf; then
+        echo 'kernel.modules_disabled=1' >> /etc/sysctl.conf
+    fi
+    echo "[V] Disablied loading of kernel modules"
+}
+
+persist_sysctl_setting() {
+    local key="$1"
+    local value="$2"
+    if ! grep -q "^${key}=" /etc/sysctl.conf; then
+        echo "${key}=${value}" >> /etc/sysctl.conf
+    fi
+}
+
+disable_ipv6_and_forwarding() {
+    echo -e "[*] Disabling ipv6 and ip forwarding"
+
+    # Disable
+    sysctl -w net.ipv6.conf.all.disable_ipv6=1
+    sysctl -w net.ipv6.conf.default.disable_ipv6=1
+    sysctl -w net.ipv4.ip_forward=0
+    sysctl -w net.ipv6.conf.all.forwarding=0
+
+    # Persist
+    persist_sysctl_setting net.ipv6.conf.all.disable_ipv6 1
+    persist_sysctl_setting net.ipv6.conf.default.disable_ipv6 1
+    persist_sysctl_setting net.ipv4.ip_forward 0
+    persist_sysctl_setting net.ipv6.conf.all.forwarding 0
+
+    echo "[V] Disabled ipv6 and ip forwarding"
+}
+
+remove_risky_binaries() {
+    echo -e "[*] Removing risky binaries (telnet, nc)"
+
+    for bin in telnet nc; do
+        path=$(command -v "$bin" 2>/dev/null)
+        if [ -n "$path" ]; then
+            echo "[*] Removing $bin at $path"
+            rm -f "$path"
+        fi
+    done
+
+    echo -e "[V] Removed risky binaries"
+}
+
+lock_scheduled_tasks() {
+    echo "[*] Locking down cron and systemd timers"
+
+    # Lock /etc/crontab if it exists
+    [ -f /etc/crontab ] && chattr +i /etc/crontab 2>/dev/null
+
+    # Lock /etc/cron.d and then the files in it, if they are not created by init_hungrctl.sh
+    [ -d /etc/cron.d ] && chattr +i /etc/cron.d 2>/dev/null
+    for file in /etc/cron.d/*; do
+        [ -e "$file" ] || continue
+        case "$file" in
+            /etc/cron.d/run_cron|/etc/cron.d/fallback_cron)
+                echo "[i] Skipping managed cron file: $file"
+                ;;
+            *)
+                chattr +i "$file" 2>/dev/null
+                ;;
+        esac
+    done
+
+    echo "[V] Locked scheduled tasks"
+}
+
 # ===== Only run as root =====
 if [ "$EUID" -ne 0 ]; then
     echo "This script must be run as root. Exiting..."
@@ -173,5 +246,9 @@ else
     # Interactive: run in a pseudo-terminal
     script -qfc "$script_dir/firewall/nft_config.sh -ifa" /dev/null
 fi
+disable_kernel_modules
+disable_ipv6_and_forwarding
+remove_risky_binaries
+lock_scheduled_tasks
 
 echo "[V] Initialization complete at $(date) on $(hostname)"

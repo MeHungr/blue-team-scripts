@@ -184,7 +184,7 @@ if ! command -v nft >/dev/null 2>&1; then
 fi
 
 # Parse options with getopts
-while getopts "iasrfl" opt; do
+while getopts "iasrfln" opt; do
     case "$opt" in
         i)
             distro=$(detect_distro)
